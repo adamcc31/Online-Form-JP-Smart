@@ -27,11 +27,11 @@ export const DynamicFormRenderer: React.FC<DynamicFormProps> = ({ schema, onSubm
     schema.fields.forEach((field) => {
       let validator;
       if (field.type === 'text') {
-        validator = z.string({ required_error: 'This field is required' });
+        validator = z.string({ message: 'This field is required' });
         if (field.required) validator = validator.min(1, 'This field is required');
         else validator = validator.optional();
       } else if (field.type === 'radio') {
-        validator = z.string({ required_error: 'Please select an option' });
+        validator = z.string({ message: 'Please select an option' });
         if (field.required) validator = validator.min(1, 'Please select an option');
         else validator = validator.optional();
       } else {

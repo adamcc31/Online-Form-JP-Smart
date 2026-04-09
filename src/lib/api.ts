@@ -1,7 +1,14 @@
 import axios from 'axios';
 
+const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+// Add logging to help diagnose connection issues in production
+if (typeof window !== 'undefined') {
+  console.log('API Base URL:', baseURL);
+}
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000',
+  baseURL,
   withCredentials: true,
 });
 

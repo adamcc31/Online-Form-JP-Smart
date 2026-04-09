@@ -38,7 +38,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "engines": {
     "node": ">=20.9.0"
   }

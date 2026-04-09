@@ -20,19 +20,25 @@ export default function LoginPage() {
     try {
       // 1. Authenticate with NestJS Backend
       const response = await api.post('/auth/login', { email, password });
-      const token = response.data.access_token;
+      // Standard response format: { success, data: { access_token }, meta }
+      const token = response.data?.data?.access_token || response.data?.access_token;
       
+      if (!token) {
+        setError('Token tidak ditemukan dalam respons server.');
+        return;
+      }
+
       // 2. Set token in Next.js Server cookie
       const authRes = await setAuthCookie(token);
 
       if (authRes.success) {
-        // Redirection based on role (could also just go generic to dashboard)
         router.push('/dashboard');
       } else {
-        setError('Authentication cookie setup failed.');
+        setError('Gagal menyimpan sesi autentikasi.');
       }
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Invalid credentials or server unavailable.');
+      const msg = err?.response?.data?.error?.message || err?.response?.data?.message || 'Kredensial salah atau server tidak tersedia.';
+      setError(msg);
     } finally {
       setLoading(false);
     }

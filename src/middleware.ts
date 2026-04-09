@@ -2,27 +2,32 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyJwtToken } from './lib/jwt';
 
-// Define the routes that need authentication
+// Routes requiring authentication
 const protectedRoutes = ['/dashboard', '/admin', '/agent'];
 
-// Define routes that are only for non-authenticated users (like login)
-const nonAuthRoutes = ['/login', '/register'];
+// Routes only for non-authenticated users
+const nonAuthRoutes = ['/login'];
+
+// Public routes that never need auth checks (performance)
+const publicRoutes = ['/p/', '/status', '/register'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Skip auth checks for public routes
+  const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
+  if (isPublicRoute) {
+    return NextResponse.next();
+  }
+
   const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));
   const isNonAuthRoute = nonAuthRoutes.some((route) => pathname.startsWith(route));
 
-  // Determine how we get the token. 
-  // Depending on how backend is storing UI session. Usually Next.js app stores in cookie.
   const token = request.cookies.get('token')?.value;
-
   const verifiedToken = token && (await verifyJwtToken(token));
 
   if (isProtectedRoute) {
     if (!verifiedToken) {
-      // Redirect to login if user tries to access a protected route without valid token
       const url = new URL('/login', request.url);
       url.searchParams.set('callbackUrl', encodeURI(request.url));
       return NextResponse.redirect(url);
@@ -31,12 +36,11 @@ export async function middleware(request: NextRequest) {
 
   if (isNonAuthRoute) {
     if (verifiedToken) {
-      // Redirect to dashboard if logged-in user tries to access login/register
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
   }
 
-  // Inject user context to headers for subsequent use maybe
+  // Inject user context to headers
   const response = NextResponse.next();
   if (verifiedToken && typeof verifiedToken.role === 'string') {
     response.headers.set('x-user-role', verifiedToken.role);
@@ -46,15 +50,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Define route matchers
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };
